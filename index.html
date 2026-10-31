@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Дашенька</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
+            color: #ffffff; font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden; min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+        }
+        .screen { display: none; width: 100%; max-width: 500px; padding: 20px; text-align: center; animation: fadeIn 1s ease; position: relative; z-index: 2; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 20px; letter-spacing: 2px; color: #b388ff; text-transform: uppercase; margin-bottom: 30px; font-weight: 600; }
+        .question { font-size: 24px; margin-bottom: 20px; font-weight: 300; }
+        input[type="text"] {
+            width: 100%; padding: 15px; background: transparent; border: 1px solid #b388ff;
+            border-radius: 10px; color: #fff; font-size: 18px; text-align: center; outline: none; margin-bottom: 20px; transition: 0.3s;
+        }
+        input[type="text"]:focus { box-shadow: 0 0 15px rgba(179, 136, 255, 0.3); }
+        .btn {
+            background: linear-gradient(135deg, #6a1b9a, #b388ff); border: none; padding: 15px 40px;
+            border-radius: 30px; color: white; font-size: 18px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 0 20px rgba(179, 136, 255, 0.4); transition: 0.3s; width: 100%;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #333; box-shadow: none; cursor: not-allowed; color: #888; }
+
+        .letter-screen h2 { font-family: 'Caveat', cursive; font-size: 42px; color: #e0b0ff; margin-bottom: 20px; opacity: 0; animation: slideUp 1s ease forwards; animation-delay: 0.5s; }
+        .letter-screen .sub { font-size: 16px; color: #888; margin-bottom: 50px; opacity: 0; animation: slideUp 1s ease forwards; animation-delay: 1s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .envelope {
+            width: 200px; height: 140px; background: #2a1b3d; border: 2px solid #6a1b9a; border-radius: 10px;
+            margin: 0 auto 30px auto; position: relative; cursor: pointer; box-shadow: 0 0 30px rgba(106, 27, 154, 0.5);
+            animation: pulse 2s infinite; transition: 0.5s;
+        }
+        .envelope:hover { transform: translateY(-5px); box-shadow: 0 0 50px rgba(106, 27, 154, 0.8); }
+        .envelope::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #6a1b9a, #b388ff); clip-path: polygon(0 0, 50% 50%, 100% 0); opacity: 0.5; border-radius: 8px 8px 0 0; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        .paper {
+            background: #f4f1ea; color: #111; padding: 30px 20px; border-radius: 5px;
+            font-family: 'Caveat', cursive; font-size: 24px; line-height: 1.4; text-align: left;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; margin-top: 20px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap;
+        }
+        .paper::-webkit-scrollbar { width: 5px; }
+        .paper::-webkit-scrollbar-thumb { background: #b388ff; border-radius: 10px; }
+
+        .choices { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        .choice-btn {
+            background: rgba(42, 27, 61, 0.6); border: 1px solid #6a1b9a; padding: 20px; border-radius: 15px;
+            color: white; font-size: 18px; cursor: pointer; transition: 0.3s; text-align: left; display: flex; flex-direction: column;
+        }
+        .choice-btn:hover { background: rgba(106, 27, 154, 0.4); border-color: #b388ff; transform: translateX(5px); }
+        .choice-sub { font-size: 12px; color: #aaa; margin-top: 5px; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .grid-item {
+            background: rgba(42, 27, 61, 0.6); border: 1px solid #6a1b9a; padding: 15px; border-radius: 10px;
+            color: white; font-size: 16px; cursor: pointer; transition: 0.2s; text-align: center;
+        }
+        .grid-item:active { background: #6a1b9a; }
+
+        .result-text { font-size: 24px; color: #e0b0ff; margin-bottom: 20px; line-height: 1.4; font-family: 'Caveat', cursive; }
+        .ring-icon { font-size: 40px; margin-bottom: 10px; text-align: center; }
+
+        /* =========================================
+           ФИНАЛЬНЫЙ ЭКРАН С РАМКОЙ ИЗ СЕРДЕЧЕК
+           ========================================= */
+        
+        .heart-frame-wrapper {
+            position: relative;
+            display: inline-block;
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        .photo-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(106, 27, 154, 0.5);
+            display: none; 
+            background: #000;
+        }
+
+        .photo-container.active {
+            display: block;
+            animation: fadeIn 1s ease;
+        }
+
+        .photo {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: blur(60px) brightness(0.6);
+            transform: scale(1.2);
+            transition: filter 1.2s ease, transform 1.2s ease;
+            z-index: 1;
+            border-radius: 20px;
+        }
+
+        .photo-container.revealed .photo {
+            filter: blur(0) brightness(1);
+            transform: scale(1);
+        }
+
+        .heart-border {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 30px;
+            animation: heartPulse 1.5s infinite alternate;
+        }
+
+        .heart-border::before,
+        .heart-border::after {
+            content: '❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️ ❤️';
+            position: absolute;
+            left: 0; right: 0;
+            font-size: 20px;
+            color: #ff4d6d;
+            letter-spacing: 2px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        .heart-border::before { top: -12px; }
+        .heart-border::after { bottom: -12px; }
+
+        .heart-border .side-hearts {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 16px;
+            color: #ff4d6d;
+            white-space: nowrap;
+            overflow: hidden;
+            line-height: 1.2;
+        }
+
+        .heart-border .left-hearts { left: -10px; }
+        .heart-border .right-hearts { right: -10px; }
+
+        @keyframes heartPulse {
+            from { transform: scale(0.98); opacity: 0.8; }
+            to { transform: scale(1.02); opacity: 1; }
+        }
+
+        /* Кнопки на финальном экране */
+        .reveal-btn, .extra-btn, .continue-btn {
+            display: block;
+            margin: 25px auto 0 auto;
+            background: linear-gradient(135deg, #6a1b9a, #b388ff);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(179, 136, 255, 0.4);
+            transition: 0.3s;
+            animation: pulse 2s infinite;
+            width: 100%;
+        }
+
+        .reveal-btn:active, .extra-btn:active, .continue-btn:active { transform: scale(0.98); }
+        .reveal-btn.hidden, .extra-btn.hidden { display: none; }
+
+        /* Стили для текста "А ЕЩЁ ЧТО?" */
+        .extra-text {
+            font-family: 'Caveat', cursive;
+            font-size: 26px;
+            line-height: 1.4;
+            color: #e0b0ff;
+            text-align: left;
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(42, 27, 61, 0.6);
+            border: 1px solid #6a1b9a;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(106, 27, 154, 0.3);
+            animation: fadeIn 1.5s ease;
+        }
+
+        .extra-text p {
+            margin-bottom: 15px;
+        }
+
+        .extra-text p:last-child {
+            margin-bottom: 0;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Падающие сердечки на фоне */
+        .falling-hearts {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .falling-hearts span {
+            position: absolute;
+            top: -10%;
+            font-size: 24px;
+            color: #ff4d6d;
+            animation: fall linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0.6; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Секретное сообщение */
+        .secret-message {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #6a1b9a;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-family: 'Caveat', cursive;
+            font-size: 24px;
+            box-shadow: 0 0 40px rgba(179, 136, 255, 0.8);
+            z-index: 100;
+            animation: popIn 0.5s ease;
+            text-align: center;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        #secretTitle {
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #secretTitle:active {
+            transform: scale(0.95);
+        }
+
+        /* =========================================
+           НОВЫЙ ЭКРАН "Я ЗНАЮ О ТЕБЕ ВСЕ"
+           ========================================= */
+        .know-all-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .know-card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #6a1b9a;
+            box-shadow: 0 0 15px rgba(106, 27, 154, 0.4);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            background: #000;
+        }
+
+        .know-card img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: blur(25px) brightness(0.5);
+            transition: filter 0.8s ease, transform 0.8s ease;
+            z-index: 1;
+        }
+
+        .know-card.revealed img {
+            filter: blur(0) brightness(0.8);
+            transform: scale(1.05);
+        }
+
+        .know-card .card-label {
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(to top, rgba(26, 11, 46, 0.95), rgba(26, 11, 46, 0));
+            padding: 15px 10px 10px 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .know-card .card-label span {
+            display: block;
+            font-size: 11px;
+            font-weight: 300;
+            color: #b388ff;
+            margin-top: 4px;
+        }
+
+        .tap-hint {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Падающие сердечки -->
+    <div class="falling-hearts" id="fallingHearts"></div>
+
+    <!-- ЭКРАН 1: ПАРОЛЬ -->
+    <div class="screen active" id="screen-password">
+        <h1>Эта эмоция закрыта словом</h1>
+        <div class="question">Имя нашего малыша?</div>
+        <input type="text" id="passInput" placeholder="Введите имя..." autocomplete="off">
+        <button class="btn" id="openBtn" onclick="checkPassword()">Открыть</button>
+    </div>
+
+    <!-- ЭКРАН 2: КОНВЕРТ -->
+    <div class="screen" id="screen-envelope">
+        <h2>Дашенька, тебе письмо.</h2>
+        <div class="sub">Ровно ночью...</div>
+        <div class="envelope" onclick="openLetter()"></div>
+        <button class="btn" onclick="openLetter()">Открой, пока все спят</button>
+    </div>
+
+    <!-- ЭКРАН 3: ПИСЬМО -->
+    <div class="screen" id="screen-letter">
+        <div class="paper" id="letterText">
+Дашуль, мы с тобой уже практически два года вместе, за это время, у нас с тобой было многое, и ссоры и счастье.
+Ты просто знай, я тебя люблю. За тебя я готов снести кабину каждому ❤️
+        </div>
+        <div class="choices" style="margin-top: 30px;">
+            <button class="btn" onclick="goToChoices()">ХОЧУ ЭТО</button>
+            <button class="btn" id="noBtn" style="background: transparent; border: 1px solid #6a1b9a; color: #b388ff;" onclick="removeNoButton()">НЕ ХОЧУ ЭТО</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 4: ЧТО БУДЕМ ДЕЛАТЬ -->
+    <div class="screen" id="screen-what">
+        <h2 style="font-family: 'Caveat', cursive; font-size: 36px; color: #e0b0ff; margin-bottom: 30px;">ЧТО БУДЕМ ДЕЛАТЬ?</h2>
+        <div class="choices">
+            <button class="choice-btn" onclick="showResult('sleep')">
+                Спать вместе
+                <span class="choice-sub">Обнявшись крепко-крепко</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('fly')">
+                Улететь подальше
+                <span class="choice-sub">Туда, где только мы</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('ring')">
+                <div class="ring-icon">💍</div>
+                То самое украшение
+                <span class="choice-sub">Самое важное в жизни</span>
+            </button>
+            <button class="choice-btn" onclick="showResult('water')">
+                К воде вдвоем
+                <span class="choice-sub">Телефоны выключим</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 5: РЕЗУЛЬТАТЫ -->
+    <div class="screen" id="screen-result">
+        <div id="resultContent"></div>
+    </div>
+
+    <!-- ЭКРАН 6: ФИНАЛЬНЫЙ -->
+    <div class="screen" id="screen-final">
+        <h2 id="secretTitle" onclick="triggerSecret()" style="font-family: 'Caveat', cursive; font-size: 32px; color: #e0b0ff; margin-bottom: 20px;">Я тебя обожаю.</h2>
+        
+        <div class="heart-frame-wrapper">
+            <div class="photo-container" id="photoContainer">
+                <img class="photo" src="dasha.jpg" alt="Dasha">
+            </div>
+            <div class="heart-border">
+                <div class="side-hearts left-hearts">
+                    ❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️
+                </div>
+                <div class="side-hearts right-hearts">
+                    ❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️<br>❤️
+                </div>
+            </div>
+        </div>
+
+        <button class="reveal-btn" id="revealBtn" onclick="revealPhoto()">НАЖМИ НА МЕНЯ</button>
+        
+        <button class="extra-btn hidden" id="extraBtn" onclick="showExtraText()">А ЕЩЁ ЧТО?</button>
+        
+        <div id="extraContent" style="display: none;"></div>
+        
+        <!-- Кнопка ПРОДОЛЖАЙ (появится после текста) -->
+        <button class="continue-btn hidden" id="continueBtn" onclick="goToKnowAll()">ПРОДОЛЖАЙ</button>
+    </div>
+
+    <!-- ЭКРАН 7: Я ЗНАЮ О ТЕБЕ ВСЕ -->
+    <div class="screen" id="screen-know-all">
+        <h2 style="font-family: 'Caveat', cursive; font-size: 36px; color: #e0b0ff; margin-bottom: 10px;">Я ЗНАЮ О ТЕБЕ ВСЕ</h2>
+        <p class="tap-hint">Нажми на каждую карточку, чтобы открыть</p>
+        
+        <div class="know-all-grid">
+            <!-- Карточка 1: Любимая машина -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="car.jpg" alt="Car">
+                <div class="card-label">Любимая машина<span>Твоя мечта</span></div>
+            </div>
+            
+            <!-- Карточка 2: Любимые песни -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="music.jpg" alt="Music">
+                <div class="card-label">Любимые песни<span>Наши с тобой</span></div>
+            </div>
+            
+            <!-- Карточка 3: Любимый муж -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="husband.jpg" alt="Husband">
+                <div class="card-label">Любимый муж<span>(это я ;) )</span></div>
+            </div>
+            
+            <!-- Карточка 4: Мечта года -->
+            <div class="know-card" onclick="revealCard(this)">
+                <img src="dream.jpg" alt="Dream">
+                <div class="card-label">Мечта года<span>Быть вместе</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Падающие сердечки
+        function createFallingHearts() {
+            const container = document.getElementById('fallingHearts');
+            const heartsCount = 20;
+            for (let i = 0; i < heartsCount; i++) {
+                const heart = document.createElement('span');
+                heart.innerText = '❤️';
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                heart.style.animationDelay = Math.random() * 5 + 's';
+                heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                container.appendChild(heart);
+            }
+        }
+        createFallingHearts();
+
+        // Проверка пароля (Андрей)
+        function checkPassword() {
+            const input = document.getElementById('passInput').value.trim().toLowerCase();
+            const btn = document.getElementById('openBtn');
+            const validNames = ['андрей', 'андрюша', 'andrey', 'andrew'];
+            
+            if (validNames.includes(input)) {
+                btn.innerText = "Проверяю...";
+                btn.disabled = true;
+                setTimeout(() => {
+                    document.getElementById('screen-password').classList.remove('active');
+                    document.getElementById('screen-envelope').classList.add('active');
+                }, 5000);
+            } else {
+                alert("Хм, не то имя... Попробуй еще раз)");
+            }
+        }
+
+        function openLetter() {
+            document.getElementById('screen-envelope').classList.remove('active');
+            document.getElementById('screen-letter').classList.add('active');
+        }
+
+        // ФУНКЦИЯ УДАЛЕНИЯ КНОПКИ "НЕ ХОЧУ ЭТО"
+        function removeNoButton() {
+            const noBtn = document.getElementById('noBtn');
+            if (noBtn) {
+                noBtn.remove(); // Полностью удаляем кнопку из DOM
+            }
+        }
+
+        function goToChoices() {
+            document.getElementById('screen-letter').classList.remove('active');
+            document.getElementById('screen-what').classList.add('active');
+        }
+
+        function showResult(type) {
+            const resultScreen = document.getElementById('screen-result');
+            const content = document.getElementById('resultContent');
+            
+            document.getElementById('screen-what').classList.remove('active');
+            resultScreen.classList.add('active');
+
+            if (type === 'sleep') {
+                content.innerHTML = `
+                    <div class="result-text">Вот и отлично, жду тебя родная, котик мой хорошенький...</div>
+                    <div style="font-size: 50px; margin: 20px 0;">🫂</div>
+                    <button class="btn" style="margin-top: 30px;" onclick="goToFinal()">Далее</button>
+                `;
+            } 
+            else if (type === 'fly') {
+                content.innerHTML = `
+                    <div class="result-text" style="margin-bottom: 20px;">Куда?</div>
+                    <div class="choices" style="gap: 10px;">
+                        <button class="choice-btn" onclick="goToFinal()">На море 🌊</button>
+                        <button class="choice-btn" onclick="goToFinal()">На Мальдивы 🏝️</button>
+                        <button class="choice-btn" onclick="goToFinal()">Куда угодно, лишь бы с тобой ❤️</button>
+                    </div>
+                `;
+            } 
+            else if (type === 'ring') {
+                let datesHTML = '';
+                for (let i = 3; i <= 30; i++) {
+                    datesHTML += `<div class="grid-item" onclick="showTime('${i} сентября')">${i} сентября</div>`;
+                }
+                content.innerHTML = `
+                    <div class="result-text">КОГДА?</div>
+                    <div class="grid-container">${datesHTML}</div>
+                `;
+            } 
+            else if (type === 'water') {
+                content.innerHTML = `
+                    <div class="result-text">Одевайся, я за тобой. Телефоны оставим дома.</div>
+                    <div style="font-size: 50px; margin: 20px 0;">🌊</div>
+                    <button class="btn" style="margin-top: 30px;" onclick="goToFinal()">Далее</button>
+                `;
+            }
+        }
+
+        function showTime(date) {
+            const content = document.getElementById('resultContent');
+            let timeHTML = '';
+            for (let i = 13; i <= 23; i++) {
+                timeHTML += `<div class="grid-item" onclick="goToFinal()">${i}:00</div>`;
+            }
+            content.innerHTML = `
+                <div class="result-text" style="margin-bottom: 10px;">${date}</div>
+                <div class="result-text" style="font-size: 20px; margin-bottom: 20px;">ВО СКОЛЬКО?</div>
+                <div class="grid-container">${timeHTML}</div>
+            `;
+        }
+
+        function goToFinal() {
+            document.getElementById('screen-result').classList.remove('active');
+            document.getElementById('screen-final').classList.add('active');
+            
+            const container = document.getElementById('photoContainer');
+            container.classList.add('active');
+        }
+
+        function revealPhoto() {
+            const container = document.getElementById('photoContainer');
+            const btn = document.getElementById('revealBtn');
+            const extraBtn = document.getElementById('extraBtn');
+            
+            container.classList.add('revealed');
+            btn.classList.add('hidden');
+            
+            setTimeout(() => {
+                extraBtn.classList.remove('hidden');
+            }, 1200);
+        }
+
+        // Текст с эффектом печатающей машинки (ФИНАЛЬНЫЙ ТЕКСТ)
+        function showExtraText() {
+            const extraBtn = document.getElementById('extraBtn');
+            const extraContent = document.getElementById('extraContent');
+            const continueBtn = document.getElementById('continueBtn');
+            
+            extraBtn.classList.add('hidden');
+            extraContent.style.display = 'block';
+            
+            const fullText = `Когда тебя нет рядом, мне физически чего-то не хватает, а когда ты появляешься — весь день становится ярче. Я хочу, чтобы ты знала: ты — самый важный человек в моей жизни.`;
+
+            extraContent.innerHTML = `<div class="extra-text" id="typewriterText"></div>`;
+            const typewriterElement = document.getElementById('typewriterText');
+            
+            let i = 0;
+            const speed = 25; // Скорость печати
+            
+            function typeWriter() {
+                if (i < fullText.length) {
+                    const char = fullText.charAt(i);
+                    typewriterElement.innerHTML += char;
+                    i++;
+                    setTimeout(typeWriter, speed);
+                } else {
+                    // Когда текст допечатан, показываем кнопку ПРОДОЛЖАЙ
+                    continueBtn.classList.remove('hidden');
+                }
+            }
+            typeWriter();
+        }
+
+        // Переход на экран "Я ЗНАЮ О ТЕБЕ ВСЕ"
+        function goToKnowAll() {
+            document.getElementById('screen-final').classList.remove('active');
+            document.getElementById('screen-know-all').classList.add('active');
+        }
+
+        // Открытие карточки в сетке (снятие блюра)
+        function revealCard(cardElement) {
+            cardElement.classList.add('revealed');
+        }
+
+        // Секретное сообщение (нажми на заголовок 5 раз)
+        let secretCount = 0;
+        function triggerSecret() {
+            secretCount++;
+            if (secretCount === 5) {
+                const secretDiv = document.createElement('div');
+                secretDiv.className = 'secret-message';
+                secretDiv.innerText = 'Ты нашла секрет! Я люблю тебя ещё сильнее ❤️';
+                document.body.appendChild(secretDiv);
+                
+                setTimeout(() => {
+                    secretDiv.remove();
+                }, 4000);
+                
+                secretCount = 0;
+            }
+        }
+    </script>
+</body>
+</html>
